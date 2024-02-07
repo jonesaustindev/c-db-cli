@@ -1,6 +1,7 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -90,4 +91,49 @@ void output_file(int fd, struct dbheader_t *dbhdr) {
   write(fd, dbhdr, sizeof(struct dbheader_t));
 
   return;
+}
+
+int read_employees(int fd, struct dbheader_t *dbhdr,
+                   struct employee_t **employees_out) {
+  if (fd < 0) {
+    printf("Got a bad FD from the user\n");
+    return STATUS_ERROR;
+  }
+
+  int count = dbhdr->count;
+
+  struct employee_t *employees = calloc(count, sizeof(struct employee_t));
+  if (employees == NULL) {
+    printf("Malloc failed\n");
+    return STATUS_ERROR;
+  }
+
+  read(fd, employees, count * sizeof(struct employee_t));
+
+  for (int i = 0; i < count; i++) {
+    employees[i].hours = ntohl(employees[i].hours);
+  }
+
+  *employees_out = employees;
+
+  return STATUS_SUCCESS;
+}
+
+int add_employee(int fd, struct dbheader_t *dbhdr, struct employee_t *employees,
+                 char *add_string) {
+  printf("%s\n", add_string);
+
+  char *name = strtok(add_string, ",");
+  char *addr = strtok(NULL, ",");
+  char *hours = strtok(NULL, ",");
+
+  printf("%s %s %s\n", name, addr, hours);
+
+  strncpy(employees[dbhdr->count - 1].name, name,
+          sizeof(employees[dbhdr->count - 1].name));
+  strncpy(employees[dbhdr->count - 1].address, addr,
+          sizeof(employees[dbhdr->count - 1].address));
+  employees[dbhdr->count - 1].hours = atoi(hours);
+
+  return STATUS_SUCCESS;
 }

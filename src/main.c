@@ -1,6 +1,7 @@
 #include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "common.h"
 #include "file.h"
@@ -16,19 +17,25 @@ void print_usage(char *argv[]) {
 
 int main(int argc, char *argv[]) {
   char *file_path = NULL;
+  char *add_string = NULL;
   bool new_file = false;
   int c;
 
   int dbfd = -1;
   struct dbheader_t *header = NULL;
+  struct employee_t *employees = NULL;
 
-  while ((c = getopt(argc, argv, "nf:")) != -1) {
+  while ((c = getopt(argc, argv, "nf:a:")) != -1) {
     switch (c) {
     case 'n':
       new_file = true;
       break;
     case 'f':
       file_path = optarg;
+      break;
+    case 'a':
+      add_string = optarg;
+      break;
       break;
     case '?':
       printf("Unknown option -%c\n", c);
@@ -69,8 +76,16 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  printf("New file: %d\n", new_file);
-  printf("File path: %s\n", file_path);
+  if (read_employees(dbfd, header, &employees) != STATUS_SUCCESS) {
+    printf("Failed to read employees");
+    return 0;
+  }
+
+  if (add_string) {
+    header->count++;
+    employees = realloc(employees, header->count * (sizeof(struct employee_t)));
+    add_employee(dbfd, header, employees, add_string);
+  }
 
   output_file(dbfd, header);
 
