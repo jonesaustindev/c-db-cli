@@ -20,8 +20,9 @@ int create_db_header(int fd, struct dbheader_t **header_out);
 int validate_db_header(int fd, struct dbheader_t **header_out);
 int read_employees(int fd, struct dbheader_t *,
                    struct employee_t **employees_out);
-void output_file(int fd, struct dbheader_t *);
+void output_file(int fd, struct dbheader_t *, struct employee_t *employees);
 int add_employee(int fd, struct dbheader_t *dbhdr, struct employee_t *employees,
                  char *add_string);
+void list_employees(struct dbheader_t *dbhdr, struct employee_t *employees);
 
 #endif // !PARSE_H

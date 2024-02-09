@@ -75,20 +75,29 @@ int validate_db_header(int fd, struct dbheader_t **header_out) {
   return STATUS_SUCCESS;
 }
 
-void output_file(int fd, struct dbheader_t *dbhdr) {
+void output_file(int fd, struct dbheader_t *dbhdr,
+                 struct employee_t *employees) {
   if (fd < 0) {
     printf("Got a bad FD from the user\n");
     return;
   }
 
+  int real_count = dbhdr->count;
+
   dbhdr->magic = htonl(dbhdr->magic);
-  dbhdr->filesize = htonl(dbhdr->filesize);
+  dbhdr->filesize =
+      htonl(sizeof(struct dbheader_t) + sizeof(struct employee_t) * real_count);
   dbhdr->count = htons(dbhdr->count);
   dbhdr->version = htons(dbhdr->version);
 
   lseek(fd, 0, SEEK_SET);
 
   write(fd, dbhdr, sizeof(struct dbheader_t));
+
+  for (int i = 0; i < real_count; i++) {
+    employees[i].hours = htonl(employees[i].hours);
+    write(fd, &employees[i], sizeof(struct employee_t));
+  }
 
   return;
 }
@@ -136,4 +145,13 @@ int add_employee(int fd, struct dbheader_t *dbhdr, struct employee_t *employees,
   employees[dbhdr->count - 1].hours = atoi(hours);
 
   return STATUS_SUCCESS;
+}
+
+void list_employees(struct dbheader_t *dbhdr, struct employee_t *employees) {
+  for (int i = 0; i < dbhdr->count; i++) {
+    printf("Employee %d\n", i);
+    printf("\tName: %s\n", employees[i].name);
+    printf("\tAddress: %s\n", employees[i].address);
+    printf("\tHours: %u\n", employees[i].hours);
+  }
 }

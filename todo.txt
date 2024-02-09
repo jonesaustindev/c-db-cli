@@ -1,0 +1,2 @@
+- Remove employee by name "-r"
+- Update employee hours
